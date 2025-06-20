@@ -3,6 +3,7 @@ import subprocess
 import logging
 from dotenv import load_dotenv
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import psutil
 
 # -------------------- Load Environment Variables --------------------
 load_dotenv()
@@ -23,19 +24,20 @@ def log_console(msg, level='info'):
 input_dir = os.getenv("INPUT_VIDEO_DIR", "downloaded_videos")
 output_dir = os.getenv("OUTPUT_VIDEO_DIR", "ready_to_post")
 
-# -------------------- FFmpeg Filter for Blurred Background --------------------
+# -------------------- Optimized FFmpeg Filter (No Blur) --------------------
 filters = (
-    "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease[fg];"
-    "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,"
-    "crop=1080:1920,boxblur=10:10[bg];"
-    "[bg][fg]overlay=(W-w)/2:(H-h)/2"
+    "scale=1080:1920:force_original_aspect_ratio=decrease,"
+    "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black"
 )
 
 # -------------------- Video Processing Function --------------------
 def process_video(input_path, output_path):
     try:
-        logging.info(f"🎬 Formatting: {os.path.basename(input_path)} → vertical with blur")
-        cmd = f'ffmpeg -y -i "{input_path}" -filter_complex "{filters}" -c:a copy "{output_path}"'
+        logging.info(f"🎬 Formatting: {os.path.basename(input_path)} → vertical padding")
+        cmd = (
+            f'ffmpeg -y -i "{input_path}" '
+            f'-vf "{filters}" -c:v libx264 -preset faster -c:a copy "{output_path}"'
+        )
         subprocess.run(cmd, check=True, shell=True)
         logging.info(f"✅ Saved to: {output_path}")
 
@@ -45,17 +47,21 @@ def process_video(input_path, output_path):
     except subprocess.CalledProcessError as e:
         logging.error(f"❌ FFmpeg failed on {input_path}: {e}")
 
-# -------------------- Main Function with Process Pool --------------------
-MAX_WORKERS = 4
-
+# -------------------- Main Function with Controlled Concurrency --------------------
 def main():
+    # Dynamically scale workers based on CPU load
+    cpu_count = os.cpu_count() or 2
+    load = psutil.cpu_percent(interval=1)
+    max_workers = max(1, int(cpu_count * (1 - load / 100) * 0.75))
+    log_console(f"🧠 CPU load: {load}%, using {max_workers} workers")
+
     if not os.path.exists("video_format_log.csv"):
         with open("video_format_log.csv", "w", encoding="utf-8") as log_file:
             log_file.write("Input Path,Output Path\n")
 
     tasks = []
 
-    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
         for subreddit_folder in os.listdir(input_dir):
             subreddit_path = os.path.join(input_dir, subreddit_folder)
             if not os.path.isdir(subreddit_path):
