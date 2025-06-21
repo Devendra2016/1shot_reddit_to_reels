@@ -1,8 +1,17 @@
-# README
+# 1shot_reddit_to_reels
 
-## 1shot_reddit_to_reels
+A complete automation pipeline to download top Reddit gaming clips, convert them for vertical reels, and upload them to Instagram with auto-commented hashtags.  
+This project is ideal for gaming content creators who want to streamline their short-form video workflow.
 
-A Python automation tool to download top Reddit gaming clips, convert them for vertical reels, and upload them to Instagram with auto-commented hashtags.
+---
+
+## Features
+
+- **One-command pipeline:** Run all steps (download, format, upload) with a single command.
+- **Live logging:** See progress and errors in real time.
+- **Dependency checks:** Warns you if any required Python packages are missing.
+- **Windows encoding fix:** Automatically sets UTF-8 encoding for smooth operation on Windows.
+- **Modular scripts:** Each step (download, format, upload) is a separate script for easy customization.
 
 ---
 
@@ -23,7 +32,7 @@ pip install -r requirements.txt
 If you don't have a `requirements.txt`, use:
 
 ```bash
-pip install instagrapi python-dotenv python-slugify yt-dlp praw
+pip install praw yt-dlp python-slugify python-dotenv instagrapi psutil tqdm
 ```
 
 ---
@@ -58,34 +67,20 @@ pip install instagrapi python-dotenv python-slugify yt-dlp praw
 
 ## Usage
 
-### 1. Download Reddit Videos
+### Run the full pipeline
 
-Run:
+Just run:
+
 ```bash
-python reddit.py
+python main.py
 ```
-- Downloads top videos from subreddits listed in `subreddits`.
-- Saves them to `downloaded_videos/`.
-- Logs details in `video_log.csv`.
 
-### 2. Convert Videos for Reels
+This will:
+1. Download top videos from subreddits listed in `subreddits` (`reddit.py`)
+2. Convert videos to vertical format for reels (`enhance_cli.py`)
+3. Upload videos to Instagram with hashtags as the first comment (`insta.py`)
 
-Run:
-```bash
-python enhance_cli.py
-```
-- Converts `.mp4` files to vertical format with blurred backgrounds.
-- Saves processed videos to `ready_to_post/`.
-
-### 3. Upload to Instagram
-
-Run:
-```bash
-python insta.py
-```
-- Uploads up to 3 new videos per run from `ready_to_post/`.
-- Posts hashtags as the first comment.
-- Logs uploads in `upload_log.csv`.
+All steps are logged live to your console.
 
 ---
 
@@ -93,16 +88,17 @@ python insta.py
 
 ```
 .
-├── reddit.py          # Reddit video downloader
-├── enhance_cli.py     # Video formatting script
-├── insta.py           # Instagram uploader with auto-comment
-├── subreddits         # List of subreddits
-├── .env               # Credentials and config
-├── video_log.csv      # Download log
-├── upload_log.csv     # Upload log
-├── downloaded_videos/ # Raw videos
-├── ready_to_post/     # Processed videos
-└── requirements.txt   # Python dependencies
+├── main.py             # Pipeline runner with live logging and dependency checks
+├── reddit.py           # Reddit video downloader
+├── enhance_cli.py      # Video formatting script
+├── insta.py            # Instagram uploader with auto-comment
+├── subreddits          # List of subreddits
+├── .env                # Credentials and config
+├── video_log.csv       # Download log
+├── upload_log.csv      # Upload log
+├── downloaded_videos/  # Raw videos
+├── ready_to_post/      # Processed videos
+└── requirements.txt    # Python dependencies
 ```
 
 ---
@@ -111,9 +107,16 @@ python insta.py
 
 - Do not share your `.env` file or credentials.
 - Instagram may limit uploads if you post too frequently.
-- For best results, run each script in order: `reddit.py` → `enhance_cli.py` → `insta.py`.
+- For best results, run the pipeline periodically (e.g., once per day).
 
 ---
+
+## License
+
+MIT License (see [LICENSE](LICENSE))
+
+---
+
 
 
 https://github.com/user-attachments/assets/16307008-0d4f-4308-aaa6-c2be85c5e758
