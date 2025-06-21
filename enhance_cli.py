@@ -1,4 +1,4 @@
-# --- START OF FILE enhance_cli.py (Simple Black Bar Formatting) ---
+# --- START OF FILE enhance_cli.py (Assertive CPU Logic) ---
 
 import os
 import subprocess
@@ -29,26 +29,22 @@ INPUT_DIR = os.getenv("INPUT_VIDEO_DIR", "downloaded_videos")
 OUTPUT_DIR = os.getenv("OUTPUT_VIDEO_DIR", "ready_to_post")
 FORMAT_LOG_FILE = "video_format_log.csv"
 
-# -------------------- Optimized FFmpeg Filter (Simple Black Bars) --------------------
+# -------------------- Definitive 'Blurred Background' FFmpeg Filter --------------------
 FFMPEG_FILTERS = (
-    "scale=1080:1920:force_original_aspect_ratio=decrease,"
-    "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black"
+    "[0:v]split=2[original][background];"
+    "[background]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=30:15[blurred_bg];"
+    "[original]scale=1080:1920:force_original_aspect_ratio=decrease[fg];"
+    "[blurred_bg][fg]overlay=(W-w)/2:(H-h)/2"
 )
 
 # -------------------- Video Processing Function --------------------
 def process_video(input_path, output_path):
-    """
-    Formats a single video using FFmpeg by adding black bars. Returns the paths upon success, else None.
-    """
     try:
-        # Using -vf for a simple video filter chain.
-        # -c:v libx264 -preset faster is a good balance of quality and speed.
-        # -c:a copy just copies the audio track without re-encoding it.
         cmd = (
-            f'ffmpeg -y -i "{input_path}" -vf "{FFMPEG_FILTERS}" '
+            f'ffmpeg -y -i "{input_path}" -filter_complex "{FFMPEG_FILTERS}" -aspect 9:16 '
             f'-c:v libx264 -preset faster -crf 23 -c:a copy -loglevel error "{output_path}"'
         )
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
+        subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
         return (input_path, output_path)
     except subprocess.CalledProcessError as e:
         logging.error(f"❌ FFmpeg failed on {os.path.basename(input_path)}.")
@@ -57,11 +53,10 @@ def process_video(input_path, output_path):
         return None
     except Exception as e:
         logging.error(f"❌ An unexpected error occurred while processing {os.path.basename(input_path)}: {e}")
-        return None
+        raise
 
 # -------------------- State Management --------------------
 def get_already_formatted_videos():
-    """Reads the format log and returns a set of source video paths that are already processed."""
     if not os.path.exists(FORMAT_LOG_FILE):
         with open(FORMAT_LOG_FILE, "w", encoding="utf-8", newline='') as f:
             writer = csv.writer(f)
@@ -72,7 +67,7 @@ def get_already_formatted_videos():
     try:
         with open(FORMAT_LOG_FILE, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
-            next(reader) # Skip header
+            next(reader)
             for row in reader:
                 if row:
                     formatted_videos.add(row[0])
@@ -115,10 +110,13 @@ def main():
 
     log_console(f"Found {len(tasks_to_run)} new videos to format.")
 
-    cpu_count = os.cpu_count() or 2
-    load = psutil.cpu_percent(interval=1)
-    max_workers = max(1, int(cpu_count * (1 - load / 100) * 0.75))
-    log_console(f"🧠 CPU load: {load}%, using up to {max_workers} worker processes.")
+    # --- THIS IS THE CRITICAL CHANGE ---
+    # This logic now ignores the current CPU load and just uses a fixed percentage of total cores.
+    cpu_count = os.cpu_count() or 4 # Get total cores, default to 4 if undetectable
+    # Use 75% of the total cores, with a minimum of 1 and a max of 12 (to prevent overkill on servers)
+    max_workers = min(12, max(1, int(cpu_count * 0.75)))
+    log_console(f"🧠 Using an assertive strategy with up to {max_workers} worker processes.")
+    # ------------------------------------
 
     processed_count = 0
     with ProcessPoolExecutor(max_workers=max_workers) as executor:

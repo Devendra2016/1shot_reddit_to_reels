@@ -127,7 +127,7 @@ for subreddit_name in subreddits:
 
         log_console(f"\n🏷️ Processing r/{subreddit_name} (top this week)")
         subreddit = reddit.subreddit(subreddit_name)
-        posts = subreddit.top(time_filter="week", limit=10)
+        posts = subreddit.top(time_filter="month", limit=10)
         
         for post in posts:
             download_queue.put((subreddit_name, post, output_dir, log_file))
