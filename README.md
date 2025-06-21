@@ -119,6 +119,3 @@ python insta.py
 https://github.com/user-attachments/assets/16307008-0d4f-4308-aaa6-c2be85c5e758
 
 
-
-https://github.com/user-attachments/assets/28a6840c-d87f-4448-9370-5b7fd811268d
-
