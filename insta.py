@@ -28,7 +28,7 @@ SESSION_FILE = "ig_session.json"
 INPUT_VIDEO_DIR = os.getenv("OUTPUT_VIDEO_DIR", "ready_to_post")
 DOWNLOAD_LOG = "video_log.csv"
 UPLOAD_LOG = "upload_log.csv"
-MAX_UPLOADS_PER_RUN = 99
+MAX_UPLOADS_PER_RUN = 3
 
 # --- ADJUSTED TIMING (Average 3 mins, High Risk) ---
 MIN_DELAY_MINUTES = 10
